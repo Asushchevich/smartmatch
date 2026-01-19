@@ -7,5 +7,5 @@ import java.util.UUID;
 
 public interface StreamRepository extends JpaRepository<Stream, UUID> {
     List<Stream> findByMatchId(UUID matchId);
-    List<Stream> findByIsActiveTrue();
+    List<Stream> findByActiveTrue();
 }

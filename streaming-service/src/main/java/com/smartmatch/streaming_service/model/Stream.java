@@ -21,5 +21,5 @@ public class Stream extends BaseEntity {
     private String provider; // YouTube, Twitch, HLS
 
     @Column(name = "is_active")
-    private boolean isActive;
+    private boolean active;
 }

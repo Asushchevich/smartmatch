@@ -2,6 +2,7 @@ package com.smartmatch.match_service.controller;
 
 import com.smartmatch.match_service.model.Match;
 import com.smartmatch.match_service.repository.MatchRepository;
+import com.smartmatch.match_service.service.MatchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,21 +15,21 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MatchController {
 
-    private final MatchRepository matchRepository;
+    private final MatchService matchService;
 
     @GetMapping
     public List<Match> getAllMatches() {
-        return matchRepository.findAll();
+        return matchService.getAllMatches();
     }
 
     @PostMapping
     public ResponseEntity<Match> createMatch(@RequestBody Match match) {
-        return ResponseEntity.ok(matchRepository.save(match));
+        return ResponseEntity.ok(matchService.createMatch(match));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Match> getMatchById(@PathVariable UUID id) {
-        return matchRepository.findById(id)
+        return matchService.getMatchById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

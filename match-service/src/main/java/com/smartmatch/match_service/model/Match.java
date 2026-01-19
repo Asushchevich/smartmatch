@@ -1,5 +1,6 @@
 package com.smartmatch.match_service.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.smartmatch.common.model.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,16 +23,22 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class Match extends BaseEntity {
-    @Column(nullable = false)
+    @Column(nullable = false, name = "title")
     private String title;
 
     @Column(name = "start_time")
+    @JsonProperty("start_date")
     private LocalDateTime startDate;
 
     @Enumerated(EnumType.STRING)
     private MatchStatus status;
 
+    @Column(name = "home_team_score")
+    @JsonProperty("home_team_score")
     private Integer homeTeamScore;
+
+    @Column(name = "away_team_score")
+    @JsonProperty("away_team_score")
     private Integer awayTeamScore;
 }
 

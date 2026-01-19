@@ -17,7 +17,7 @@ public class StreamController {
     private final StreamService streamService;
 
     @GetMapping("/match/{matchId}")
-    public ResponseEntity<List<Stream>> getByMatch(@PathVariable UUID matchId) {
+    public ResponseEntity<List<Stream>> getByMatch(@PathVariable("matchId") UUID matchId) {
         return ResponseEntity.ok(streamService.getStreamsForMatch(matchId));
     }
 
@@ -27,7 +27,9 @@ public class StreamController {
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<Void> updateStatus(@PathVariable UUID id, @RequestParam boolean active) {
+    public ResponseEntity<Void> updateStatus(
+            @PathVariable("id") UUID id,
+            @RequestParam("active") boolean active) {
         streamService.toggleStreamStatus(id, active);
         return ResponseEntity.ok().build();
     }
