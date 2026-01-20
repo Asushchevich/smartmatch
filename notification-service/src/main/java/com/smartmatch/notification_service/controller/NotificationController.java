@@ -9,7 +9,6 @@ import java.time.Duration;
 @RequestMapping("/api/v1/notifications")
 public class NotificationController {
 
-    // Имитация потока уведомлений о голах
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> streamNotifications() {
         return Flux.interval(Duration.ofSeconds(5))

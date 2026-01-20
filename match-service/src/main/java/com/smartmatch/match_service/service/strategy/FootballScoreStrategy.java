@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 
 @Component("FOOTBALL")
 public class FootballScoreStrategy implements ScoreStrategy {
+
     @Override
     public void updateScore(Match match, String teamSide) {
         if ("HOME".equalsIgnoreCase(teamSide)) {

@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Getter
 @Setter
-@MappedSuperclass // Это говорит JPA, что поля этого класса должны быть в дочерних таблицах
+@MappedSuperclass
 public abstract class BaseEntity {
 
     @Id
