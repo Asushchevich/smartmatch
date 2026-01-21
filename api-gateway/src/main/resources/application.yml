@@ -10,7 +10,9 @@ spring:
         - id: auth-service
           uri: http://localhost:8084
           predicates:
-            - Path=/auth/**
+            - Path=/api/v1/auth/**
+          filters:
+            - AuthenticationFilter
 
         - id: match-service
           uri: http://localhost:8081
@@ -29,3 +31,8 @@ logging:
   level:
     org.springframework.cloud.gateway: TRACE
     org.springframework.http.server.reactive: DEBUG
+
+jwt:
+  secret: your_very_secret_key_here
+  # 86400000 = 24 часа
+  expiration: 86400000

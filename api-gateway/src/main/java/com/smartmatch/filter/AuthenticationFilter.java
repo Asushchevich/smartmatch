@@ -1,10 +1,6 @@
 package com.smartmatch.filter;
 
 import com.smartmatch.common.JwtUtils;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
@@ -13,48 +9,50 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import javax.crypto.SecretKey;
-
 @Component
 public class AuthenticationFilter extends AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
 
-    public AuthenticationFilter() {
+    private final JwtUtils jwtUtils;
+
+    public AuthenticationFilter(JwtUtils jwtUtils) {
         super(Config.class);
+        this.jwtUtils = jwtUtils;
     }
 
     public static class Config {
     }
 
-    @Autowired
-    private JwtUtils jwtUtils;
-
     @Override
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
             if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
-                return onError(exchange, HttpStatus.UNAUTHORIZED);
+                return onError(exchange, "Missing authorization header", HttpStatus.UNAUTHORIZED);
             }
 
-            String authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
+            String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return onError(exchange, HttpStatus.UNAUTHORIZED);
+                return onError(exchange, "Invalid authorization header format", HttpStatus.UNAUTHORIZED);
             }
 
             String token = authHeader.substring(7);
 
             try {
-                jwtUtils.validateToken(token); // Используем наш общий метод
+                jwtUtils.validateToken(token);
+
+                // String username = jwtUtils.extractUsername(token);
+                // exchange.getRequest().mutate().header("X-User-Name", username).build();
+
             } catch (Exception e) {
-                return onError(exchange, HttpStatus.UNAUTHORIZED);
+                return onError(exchange, "Invalid or expired token", HttpStatus.UNAUTHORIZED);
             }
 
             return chain.filter(exchange);
         };
     }
 
-    private Mono<Void> onError(ServerWebExchange exchange, HttpStatus status) {
+    private Mono<Void> onError(ServerWebExchange exchange, String err, HttpStatus status) {
         exchange.getResponse().setStatusCode(status);
         return exchange.getResponse().setComplete();
-
     }
 }

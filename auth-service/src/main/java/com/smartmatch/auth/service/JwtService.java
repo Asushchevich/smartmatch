@@ -1,34 +1,27 @@
 package com.smartmatch.auth.service;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
+import com.smartmatch.common.JwtUtils;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-
-import java.security.Key;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.stream.Collectors; // Добавь импорт
+import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class JwtService {
 
-    public static final String SECRET = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
+    private final JwtUtils jwtUtils;
 
-    public String generateToken(String userName) {
-        Map<String, Object> claims = new HashMap<>();
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(userName)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30)) // 30 минут
-                .signWith(getSignKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
+    public String generateToken(UserDetails userDetails) {
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
 
-    private Key getSignKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET);
-        return Keys.hmacShaKeyFor(keyBytes);
+        System.out.println("DEBUG: Создаем токен для: " + userDetails.getUsername());
+        System.out.println("DEBUG: Список ролей из БД: " + roles);
+
+        return jwtUtils.generateToken(userDetails.getUsername(), roles);
     }
 }
