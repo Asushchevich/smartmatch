@@ -34,16 +34,26 @@ public class MatchService {
 
     @Transactional
     public Match createMatch(Match match) {
+        if (match.getTitle() == null || match.getTitle().isBlank()) {
+            if (match.getHomeTeam() != null && match.getAwayTeam() != null) {
+                match.setTitle(match.getHomeTeam() + " — " + match.getAwayTeam());
+            }
+        }
+
         Match savedMatch = matchRepository.save(match);
 
         MatchEvent event = MatchEvent.builder()
                 .matchId(savedMatch.getId())
                 .title(savedMatch.getTitle())
-                .status(savedMatch.getStatus() != null ? savedMatch.getStatus().toString() : "SCHEDULED")
-                .message("Match has been successfully created!")
+                .status(savedMatch.getStatus().toString())
+                .message("Матч успешно запланирован")
                 .build();
 
-        rabbitTemplate.convertAndSend(RabbitConfig.EXCHANGE, RabbitConfig.ROUTING_KEY, event);
+        rabbitTemplate.convertAndSend(
+                RabbitConfig.EXCHANGE,
+                RabbitConfig.ROUTING_KEY,
+                event
+        );
 
         return savedMatch;
     }

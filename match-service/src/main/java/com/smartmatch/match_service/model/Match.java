@@ -26,6 +26,14 @@ public class Match extends BaseEntity {
     @Column(nullable = false, name = "title")
     private String title;
 
+    @Column(name = "home_team")
+    @JsonProperty("teamA")
+    private String homeTeam;
+
+    @Column(name = "away_team")
+    @JsonProperty("teamB")
+    private String awayTeam;
+
     @Column(name = "start_time")
     @JsonProperty("start_date")
     private LocalDateTime startDate;
