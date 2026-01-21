@@ -3,6 +3,7 @@ package com.smartmatch.match_service.controller;
 import com.smartmatch.match_service.model.Match;
 import com.smartmatch.match_service.repository.MatchRepository;
 import com.smartmatch.match_service.service.MatchService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +24,7 @@ public class MatchController {
     }
 
     @PostMapping
-    public ResponseEntity<Match> createMatch(@RequestBody Match match) {
+    public ResponseEntity<Match> createMatch(@Valid @RequestBody Match match) {
         return ResponseEntity.ok(matchService.createMatch(match));
     }
 
