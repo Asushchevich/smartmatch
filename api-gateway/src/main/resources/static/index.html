@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>SmartMatch Auth</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f4f4f9;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            width: 320px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input, button {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button.login-btn {
+            background: #007bff;
+        }
+
+        #tokenArea {
+            margin-top: 20px;
+            word-break: break-all;
+            width: 400px;
+            color: #555;
+            font-size: 12px;
+            background: #eee;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Регистрация</h2>
+    <form id="regForm">
+        <input id="regUser" placeholder="Имя пользователя" required type="text">
+        <input id="regPass" placeholder="Пароль" required type="password">
+        <button type="submit">Создать аккаунт</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Вход</h2>
+    <form id="loginForm">
+        <input id="loginUser" placeholder="Имя пользователя" required type="text">
+        <input id="loginPass" placeholder="Пароль" required type="password">
+        <button class="login-btn" type="submit">Войти</button>
+    </form>
+</div>
+
+<div id="tokenArea"></div>
+
+<script>
+    const API_URL = '/api/v1/auth';
+
+    document.getElementById('regForm').onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const res = await fetch(`${API_URL}/register`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    username: document.getElementById('regUser').value,
+                    password: document.getElementById('regPass').value,
+                    role: 'ROLE_USER',
+                    enabled: true
+                })
+            });
+            const text = await res.text();
+            alert(text);
+        } catch (err) {
+            alert('Ошибка сети!');
+        }
+    };
+
+    document.getElementById('loginForm').onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const res = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    username: document.getElementById('loginUser').value,
+                    password: document.getElementById('loginPass').value
+                })
+            });
+            if (res.ok) {
+                const token = await res.text();
+                const area = document.getElementById('tokenArea');
+                area.style.display = 'block';
+                area.innerText = "JWT Токен: " + token;
+                localStorage.setItem('token', token);
+            } else {
+                alert('Ошибка входа!');
+            }
+        } catch (err) {
+            alert('Ошибка сети!');
+        }
+    };
+</script>
+</body>
+</html>
