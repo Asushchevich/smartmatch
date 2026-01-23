@@ -34,10 +34,14 @@ public class MatchService {
 
     @Transactional
     public Match createMatch(Match match) {
+        if (match.getStatus() == null) {
+            match.setStatus(com.smartmatch.match_service.model.MatchStatus.SCHEDULED);
+        }
+
         if (match.getTitle() == null || match.getTitle().isBlank()) {
-            if (match.getHomeTeam() != null && match.getAwayTeam() != null) {
-                match.setTitle(match.getHomeTeam() + " — " + match.getAwayTeam());
-            }
+            String home = (match.getHomeTeam() != null) ? match.getHomeTeam() : "TBD";
+            String away = (match.getAwayTeam() != null) ? match.getAwayTeam() : "TBD";
+            match.setTitle(home + " — " + away);
         }
 
         Match savedMatch = matchRepository.save(match);
@@ -49,11 +53,16 @@ public class MatchService {
                 .message("Матч успешно запланирован")
                 .build();
 
-        rabbitTemplate.convertAndSend(
-                RabbitConfig.EXCHANGE,
-                RabbitConfig.ROUTING_KEY,
-                event
-        );
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitConfig.EXCHANGE,
+                    RabbitConfig.ROUTING_KEY,
+                    event
+            );
+            System.out.println(" [x] Sent to RabbitMQ: " + event.getTitle());
+        } catch (Exception e) {
+            System.err.println(" [!] Failed to send message to RabbitMQ: " + e.getMessage());
+        }
 
         return savedMatch;
     }

@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import java.util.stream.Collectors; // Добавь импорт
+import java.util.stream.Collectors;
 import java.util.List;
 
 @Service
