@@ -67,6 +67,11 @@ public class MatchService {
         return savedMatch;
     }
 
+    @Transactional(readOnly = true)
+    public boolean existsById(UUID id) {
+        return matchRepository.existsById(id);
+    }
+
     public void goalScored(UUID matchId, String sportType, String teamSide){
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new RuntimeException("Match not found"));

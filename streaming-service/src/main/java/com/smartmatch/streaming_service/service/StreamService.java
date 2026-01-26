@@ -1,5 +1,8 @@
 package com.smartmatch.streaming_service.service;
 
+import com.smartmatch.streaming_service.client.MatchClient;
+import com.smartmatch.streaming_service.dto.StreamRequest;
+import com.smartmatch.streaming_service.exception.ResourceNotFoundException;
 import com.smartmatch.streaming_service.model.Stream;
 import com.smartmatch.streaming_service.repository.StreamRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +17,7 @@ import java.util.UUID;
 public class StreamService {
 
     private final StreamRepository streamRepository;
+    private final MatchClient matchClient;
 
     @Transactional(readOnly = true)
     public List<Stream> getStreamsForMatch(UUID matchId) {
@@ -21,8 +25,18 @@ public class StreamService {
     }
 
     @Transactional
-    public Stream createStream(Stream stream) {
-        stream.setActive(true);
+    public Stream createStream(StreamRequest request) {
+        boolean exists = matchClient.checkMatchExists(request.matchId());
+        if (!exists) {
+            throw new ResourceNotFoundException("Матч с ID " + request.matchId() + " не найден!");
+        }
+        Stream stream = Stream.builder()
+                .matchId(request.matchId())
+                .streamUrl(request.streamUrl())
+                .provider(request.provider())
+                .active(true)
+                .build();
+
         return streamRepository.save(stream);
     }
 
@@ -32,5 +46,14 @@ public class StreamService {
                 .orElseThrow(() -> new RuntimeException("Stream not found"));
         stream.setActive(status);
         streamRepository.save(stream);
+    }
+
+    public void deactivateStreamsForMatch(UUID matchId) {
+        List<Stream> streams = streamRepository.findByMatchId(matchId);
+        streams.forEach(stream -> {
+            stream.setActive(false);
+        });
+        streamRepository.saveAll(streams);
+        System.out.println("Все стримы для матча " + matchId + " деактивированы.");
     }
 }

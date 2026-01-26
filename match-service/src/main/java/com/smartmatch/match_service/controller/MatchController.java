@@ -1,7 +1,6 @@
 package com.smartmatch.match_service.controller;
 
 import com.smartmatch.match_service.model.Match;
-import com.smartmatch.match_service.repository.MatchRepository;
 import com.smartmatch.match_service.service.MatchService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,9 +28,14 @@ public class MatchController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Match> getMatchById(@PathVariable UUID id) {
+    public ResponseEntity<Match> getMatchById(@PathVariable("id") UUID id) {
         return matchService.getMatchById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/exists")
+    public boolean checkMatchExists(@PathVariable("id") UUID id) {
+        return matchService.existsById(id);
     }
 }

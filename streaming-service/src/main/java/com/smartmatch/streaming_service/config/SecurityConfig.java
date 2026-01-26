@@ -1,11 +1,11 @@
-package com.smartmatch.match_service.config;
+package com.smartmatch.streaming_service.config;
 
 import com.smartmatch.common.JwtFilter;
 import com.smartmatch.common.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpMethod; // Добавили импорт
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -29,18 +29,12 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/api/v1/matches/{id}/exists").hasAnyRole("ADMIN", "USER")
-
-                        .requestMatchers(HttpMethod.POST, "/api/v1/matches/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/matches/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/v1/matches/**").hasRole("ADMIN")
-
-                        .requestMatchers(HttpMethod.GET, "/api/v1/matches/**").hasAnyRole("ADMIN", "USER")
-
+                        .requestMatchers(HttpMethod.POST, "/api/v1/streams/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/streams/**").hasAnyRole("ADMIN", "USER")
                         .anyRequest().authenticated()
                 )
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

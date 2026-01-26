@@ -1,5 +1,6 @@
 package com.smartmatch.streaming_service.controller;
 
+import com.smartmatch.streaming_service.dto.StreamRequest;
 import com.smartmatch.streaming_service.model.Stream;
 import com.smartmatch.streaming_service.service.StreamService;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +23,8 @@ public class StreamController {
     }
 
     @PostMapping
-    public ResponseEntity<Stream> addStream(@RequestBody Stream stream) {
-        return ResponseEntity.ok(streamService.createStream(stream));
+    public ResponseEntity<Stream> addStream(@RequestBody StreamRequest request) {
+        return ResponseEntity.ok(streamService.createStream(request));
     }
 
     @PatchMapping("/{id}/status")

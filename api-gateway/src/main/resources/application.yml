@@ -25,6 +25,12 @@ spring:
             - Path=/api/v1/notifications/**
           filters:
             - AuthenticationFilter
+        - id: streaming-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/v1/streams/**
+          filters:
+            - AuthenticationFilter
 
 logging:
   level:
