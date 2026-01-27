@@ -4,4 +4,5 @@ import com.smartmatch.match_service.model.Match;
 
 public interface ScoreStrategy {
     void updateScore(Match match, String teamSide);
+    void decrementScore(Match match, String teamSide);
 }

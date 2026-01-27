@@ -12,4 +12,6 @@ public class MatchEvent {
     private String title;
     private String status;
     private String message;
+    private Integer homeTeamScore;
+    private Integer awayTeamScore;
 }

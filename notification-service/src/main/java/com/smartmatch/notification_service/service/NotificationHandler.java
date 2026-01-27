@@ -18,11 +18,15 @@ public class NotificationHandler {
     @RabbitListener(queues = "notification.queue")
     public void handleNotification(MatchEvent event) {
         System.out.println("--------------------------------------------------");
-        System.out.println("🔔 УВЕДОМЛЕНИЕ (DTO):");
-        System.out.println("📍 Матч ID: " + event.getMatchId());
-        System.out.println("⚽ Игра: " + event.getTitle());
+        System.out.println("🔔 УВЕДОМЛЕНИЕ:");
+        System.out.println("📍 Матч: " + event.getTitle());
+
+        if (event.getHomeTeamScore() != null && event.getAwayTeamScore() != null) {
+            System.out.println("⚽ ТЕКУЩИЙ СЧЕТ: [" + event.getHomeTeamScore() + " : " + event.getAwayTeamScore() + "]");
+        }
+
         System.out.println("📊 Статус: " + event.getStatus());
-        System.out.println("💬 Текст: " + event.getMessage());
+        System.out.println("💬 Сообщение: " + event.getMessage());
         System.out.println("--------------------------------------------------");
 
         Notification notification = Notification.builder()

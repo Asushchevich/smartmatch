@@ -50,11 +50,11 @@ public class Match extends BaseEntity {
 
     @Column(name = "home_team_score")
     @JsonProperty("home_team_score")
-    private Integer homeTeamScore;
+    private Integer homeTeamScore = 0;
 
     @Column(name = "away_team_score")
     @JsonProperty("away_team_score")
-    private Integer awayTeamScore;
+    private Integer awayTeamScore = 0;
 }
 
 

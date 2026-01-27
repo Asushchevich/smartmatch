@@ -46,4 +46,22 @@ public class MatchController {
             @RequestParam("status") MatchStatus status) {
         return ResponseEntity.ok(matchService.updateMatchStatus(id, status));
     }
+
+    @PatchMapping("/{id}/goal")
+    public ResponseEntity<Void> updateScore(
+            @PathVariable("id") UUID id,
+            @RequestParam("sportType") String sportType,
+            @RequestParam("teamSide") String teamSide) {
+        matchService.goalScored(id, sportType, teamSide);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/goal-cancel")
+    public ResponseEntity<Void> cancelGoal(
+            @PathVariable("id") UUID id,
+            @RequestParam("sportType") String sportType,
+            @RequestParam("teamSide") String teamSide) {
+        matchService.goalCancelled(id, sportType, teamSide);
+        return ResponseEntity.ok().build();
+    }
 }

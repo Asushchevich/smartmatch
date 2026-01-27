@@ -38,6 +38,9 @@ public class MatchService {
             match.setStatus(com.smartmatch.match_service.model.MatchStatus.SCHEDULED);
         }
 
+        match.setHomeTeamScore(0);
+        match.setAwayTeamScore(0);
+
         if (match.getTitle() == null || match.getTitle().isBlank()) {
             String home = (match.getHomeTeam() != null) ? match.getHomeTeam() : "TBD";
             String away = (match.getAwayTeam() != null) ? match.getAwayTeam() : "TBD";
@@ -50,6 +53,8 @@ public class MatchService {
                 .matchId(savedMatch.getId())
                 .title(savedMatch.getTitle())
                 .status(savedMatch.getStatus().toString())
+                .homeTeamScore(savedMatch.getHomeTeamScore())
+                .awayTeamScore(savedMatch.getAwayTeamScore())
                 .message("Матч успешно запланирован")
                 .build();
 
@@ -59,7 +64,7 @@ public class MatchService {
                     RabbitConfig.ROUTING_KEY,
                     event
             );
-            System.out.println(" [x] Sent to RabbitMQ: " + event.getTitle());
+            System.out.println(" [x] Sent to RabbitMQ: " + event.getTitle() + " with score 0:0");
         } catch (Exception e) {
             System.err.println(" [!] Failed to send message to RabbitMQ: " + e.getMessage());
         }
@@ -72,6 +77,7 @@ public class MatchService {
         return matchRepository.existsById(id);
     }
 
+    @Transactional
     public void goalScored(UUID matchId, String sportType, String teamSide){
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new RuntimeException("Match not found"));
@@ -80,7 +86,23 @@ public class MatchService {
 
         if (strategy != null) {
             strategy.updateScore(match, teamSide);
-            matchRepository.save(match);
+            Match savedMatch = matchRepository.save(match);
+
+            MatchEvent event = MatchEvent.builder()
+                    .matchId(savedMatch.getId())
+                    .title(savedMatch.getTitle())
+                    .status(savedMatch.getStatus().toString())
+                    .homeTeamScore(savedMatch.getHomeTeamScore())
+                    .awayTeamScore(savedMatch.getAwayTeamScore())
+                    .message("ГОООЛ! Текущий счет " + savedMatch.getHomeTeamScore() + ":" + savedMatch.getAwayTeamScore())
+                    .build();
+
+            rabbitTemplate.convertAndSend(
+                    RabbitConfig.EXCHANGE,
+                    RabbitConfig.ROUTING_KEY,
+                    event
+            );
+            System.out.println(" [x] Score updated sent to RabbitMQ: " + event.getMessage());
         }
     }
 
@@ -114,5 +136,28 @@ public class MatchService {
         );
 
         return savedMatch;
+    }
+
+    @Transactional
+    public void goalCancelled(UUID matchId, String sportType, String teamSide) {
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new RuntimeException("Match not found"));
+
+        ScoreStrategy strategy = strategies.get(sportType.toUpperCase());
+        if (strategy != null) {
+            strategy.decrementScore(match, teamSide);
+            Match savedMatch = matchRepository.save(match);
+
+            MatchEvent event = MatchEvent.builder()
+                    .matchId(savedMatch.getId())
+                    .title(savedMatch.getTitle())
+                    .status(savedMatch.getStatus().toString())
+                    .homeTeamScore(savedMatch.getHomeTeamScore())
+                    .awayTeamScore(savedMatch.getAwayTeamScore())
+                    .message("Гол отменен! Текущий счет " + savedMatch.getHomeTeamScore() + ":" + savedMatch.getAwayTeamScore())
+                    .build();
+
+            rabbitTemplate.convertAndSend(RabbitConfig.EXCHANGE, RabbitConfig.ROUTING_KEY, event);
+        }
     }
 }
