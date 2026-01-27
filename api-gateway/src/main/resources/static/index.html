@@ -2,35 +2,42 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>SmartMatch Auth</title>
+    <title>SmartMatch - Управление</title>
     <style>
         body {
-            font-family: sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            background: #f4f4f9;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 800px;
         }
 
         .card {
             background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
-            width: 320px;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+        h2 { margin-top: 0; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+
+        form { display: flex; flex-direction: column; gap: 12px; }
 
         input, button {
             padding: 12px;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 6px;
+            font-size: 14px;
         }
 
         button {
@@ -39,74 +46,117 @@
             border: none;
             cursor: pointer;
             font-weight: bold;
+            transition: background 0.3s;
         }
 
-        button.login-btn {
-            background: #007bff;
-        }
+        button:hover { opacity: 0.9; }
+
+        .login-btn { background: #007bff; }
+        .refresh-btn { background: #6c757d; margin-bottom: 15px; }
+        .finish-btn { background: #dc3545; padding: 6px 12px; font-size: 12px; }
 
         #tokenArea {
-            margin-top: 20px;
             word-break: break-all;
-            width: 400px;
-            color: #555;
-            font-size: 12px;
-            background: #eee;
+            color: #666;
+            font-size: 11px;
+            background: #e9ecef;
             padding: 10px;
-            border-radius: 4px;
+            border-radius: 6px;
+            margin-top: 10px;
             display: none;
         }
+
+        .match-item {
+            background: #fff;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .match-info b { font-size: 16px; color: #222; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .status-SCHEDULED { background: #fff3cd; color: #856404; }
+        .status-FINISHED { background: #d4edda; color: #155724; }
+
+        #authSection { display: flex; gap: 20px; justify-content: center; }
+        @media (max-width: 600px) { #authSection { flex-direction: column; } }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>Регистрация</h2>
-    <form id="regForm">
-        <input id="regUser" placeholder="Имя пользователя" required type="text">
-        <input id="regPass" placeholder="Пароль" required type="password">
-        <button type="submit">Создать аккаунт</button>
-    </form>
-</div>
+<div class="container">
+    <div id="authSection">
+        <div class="card" style="flex: 1;">
+            <h2>Регистрация</h2>
+            <form id="regForm">
+                <input id="regUser" placeholder="Имя пользователя" required type="text">
+                <input id="regPass" placeholder="Пароль" required type="password">
+                <button type="submit">Создать аккаунт</button>
+            </form>
+        </div>
 
-<div class="card">
-    <h2>Вход</h2>
-    <form id="loginForm">
-        <input id="loginUser" placeholder="Имя пользователя" required type="text">
-        <input id="loginPass" placeholder="Пароль" required type="password">
-        <button class="login-btn" type="submit">Войти</button>
-    </form>
-</div>
+        <div class="card" style="flex: 1;">
+            <h2>Вход</h2>
+            <form id="loginForm">
+                <input id="loginUser" placeholder="Имя пользователя" required type="text">
+                <input id="loginPass" placeholder="Пароль" required type="password">
+                <button class="login-btn" type="submit">Войти</button>
+            </form>
+            <div id="tokenArea"></div>
+        </div>
+    </div>
 
-<div id="tokenArea"></div>
+    <div id="dashboard" class="card" style="display: none;">
+        <h2>Управление матчами</h2>
+        <button class="refresh-btn" onclick="loadMatches()">🔄 Обновить список</button>
+        <div id="matchesContainer">
+            <p style="color: #999;">Загрузка матчей...</p>
+        </div>
+    </div>
+</div>
 
 <script>
-    const API_URL = '/api/v1/auth';
+    const AUTH_URL = '/api/v1/auth';
+    const MATCH_URL = '/api/v1/matches';
 
+    // РЕГИСТРАЦИЯ
     document.getElementById('regForm').onsubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch(`${API_URL}/register`, {
+            const res = await fetch(`${AUTH_URL}/register`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     username: document.getElementById('regUser').value,
                     password: document.getElementById('regPass').value,
-                    role: 'ROLE_USER',
+                    role: 'ROLE_ADMIN', // Для тестов ставим ADMIN
                     enabled: true
                 })
             });
             const text = await res.text();
             alert(text);
-        } catch (err) {
-            alert('Ошибка сети!');
-        }
+        } catch (err) { alert('Ошибка сети!'); }
     };
 
+    // ВХОД
     document.getElementById('loginForm').onsubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch(`${API_URL}/login`, {
+            const res = await fetch(`${AUTH_URL}/login`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -116,16 +166,81 @@
             });
             if (res.ok) {
                 const token = await res.text();
+                localStorage.setItem('token', token);
+
                 const area = document.getElementById('tokenArea');
                 area.style.display = 'block';
-                area.innerText = "JWT Токен: " + token;
-                localStorage.setItem('token', token);
-            } else {
-                alert('Ошибка входа!');
+                area.innerText = "JWT: " + token.substring(0, 30) + "...";
+
+                showDashboard();
+            } else { alert('Ошибка входа!'); }
+        } catch (err) { alert('Ошибка сети!'); }
+    };
+
+    // ЗАГРУЗКА МАТЧЕЙ
+    async function loadMatches() {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const res = await fetch(MATCH_URL, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Не удалось загрузить данные');
+
+            const matches = await res.json();
+            const container = document.getElementById('matchesContainer');
+
+            if (matches.length === 0) {
+                container.innerHTML = '<p>Матчей пока нет.</p>';
+                return;
             }
+
+            container.innerHTML = matches.map(m => `
+                <div class="match-item">
+                    <div class="match-info">
+                        <b>${m.teamA} — ${m.teamB}</b><br>
+                        <span class="status-badge status-${m.status}">${m.status}</span>
+                    </div>
+                    <div>
+                        ${m.status === 'SCHEDULED' ?
+                `<button class="finish-btn" onclick="finishMatch('${m.id}')">Завершить матч</button>` :
+                '✅ Завершен'}
+                    </div>
+                </div>
+            `).join('');
         } catch (err) {
-            alert('Ошибка сети!');
+            console.error(err);
+            document.getElementById('matchesContainer').innerHTML = '<p style="color:red">Ошибка доступа (403/500)</p>';
         }
+    }
+
+    // ЗАВЕРШЕНИЕ МАТЧА (Триггер RabbitMQ)
+    async function finishMatch(id) {
+        const token = localStorage.getItem('token');
+        if (!confirm('Вы уверены? Это остановит все трансляции!')) return;
+
+        try {
+            const res = await fetch(`${MATCH_URL}/${id}/status?status=FINISHED`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                loadMatches(); // Обновляем список
+            } else {
+                alert('Ошибка: возможно, у вас нет прав ADMIN');
+            }
+        } catch (err) { alert('Ошибка при отправке запроса'); }
+    }
+
+    function showDashboard() {
+        document.getElementById('dashboard').style.display = 'block';
+        loadMatches();
+    }
+
+    // Проверка сессии при открытии
+    window.onload = () => {
+        if (localStorage.getItem('token')) { showDashboard(); }
     };
 </script>
 </body>
