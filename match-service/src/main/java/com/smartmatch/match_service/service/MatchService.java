@@ -83,4 +83,36 @@ public class MatchService {
             matchRepository.save(match);
         }
     }
+
+    @Transactional
+    public Match updateMatchStatus(UUID id, com.smartmatch.match_service.model.MatchStatus newStatus) {
+        Match match = matchRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Match not found"));
+
+        match.setStatus(newStatus);
+        Match savedMatch = matchRepository.save(match);
+
+        String messageText = switch (newStatus) {
+            case SCHEDULED -> "Матч успешно запланирован";
+            case LIVE -> "Матч начался! Трансляции доступны.";
+            case FINISHED -> "Матч завершен. Спасибо, что были с нами!";
+            case CANCELLED -> "Матч отменен.";
+            default -> "Статус матча обновлен на: " + newStatus;
+        };
+
+        MatchEvent event = MatchEvent.builder()
+                .matchId(savedMatch.getId())
+                .title(savedMatch.getTitle())
+                .status(savedMatch.getStatus().toString())
+                .message(messageText)
+                .build();
+
+        rabbitTemplate.convertAndSend(
+                RabbitConfig.EXCHANGE,
+                RabbitConfig.ROUTING_KEY,
+                event
+        );
+
+        return savedMatch;
+    }
 }

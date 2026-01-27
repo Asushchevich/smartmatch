@@ -1,6 +1,7 @@
 package com.smartmatch.match_service.controller;
 
 import com.smartmatch.match_service.model.Match;
+import com.smartmatch.match_service.model.MatchStatus;
 import com.smartmatch.match_service.service.MatchService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,5 +38,12 @@ public class MatchController {
     @GetMapping("/{id}/exists")
     public boolean checkMatchExists(@PathVariable("id") UUID id) {
         return matchService.existsById(id);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Match> updateStatus(
+            @PathVariable("id") UUID id,
+            @RequestParam("status") MatchStatus status) {
+        return ResponseEntity.ok(matchService.updateMatchStatus(id, status));
     }
 }

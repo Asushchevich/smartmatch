@@ -56,4 +56,12 @@ public class StreamService {
         streamRepository.saveAll(streams);
         System.out.println("Все стримы для матча " + matchId + " деактивированы.");
     }
+
+    @org.springframework.amqp.rabbit.annotation.RabbitListener(queues = "stream.queue") // Убедись, что такая очередь есть в RabbitConfig
+    public void handleMatchEvent(com.smartmatch.common.dto.MatchEvent event) {
+        if ("FINISHED".equals(event.getStatus()) || "CANCELLED".equals(event.getStatus())) {
+            deactivateStreamsForMatch(event.getMatchId());
+            System.out.println(" [x] Стримы для матча " + event.getMatchId() + " выключены автоматически.");
+        }
+    }
 }

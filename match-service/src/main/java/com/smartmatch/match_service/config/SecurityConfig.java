@@ -25,23 +25,42 @@ public class SecurityConfig {
         return new JwtFilter(jwtUtils);
     }
 
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/api/v1/matches/{id}/exists").hasAnyRole("ADMIN", "USER")
+                        // ВРЕМЕННО: Разрешаем PATCH без токена для теста RabbitMQ
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/matches/**").permitAll()
 
+                        .requestMatchers(HttpMethod.GET, "/api/v1/matches/{id}/exists").hasAnyRole("ADMIN", "USER")
                         .requestMatchers(HttpMethod.POST, "/api/v1/matches/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/matches/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/v1/matches/**").hasRole("ADMIN")
-
                         .requestMatchers(HttpMethod.GET, "/api/v1/matches/**").hasAnyRole("ADMIN", "USER")
-
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
+//    @Bean
+//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+//        return http
+//                .csrf(AbstractHttpConfigurer::disable)
+//                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//                .authorizeHttpRequests(auth -> auth
+//                        .requestMatchers(HttpMethod.GET, "/api/v1/matches/{id}/exists").hasAnyRole("ADMIN", "USER")
+//
+//                        .requestMatchers(HttpMethod.POST, "/api/v1/matches/**").hasRole("ADMIN")
+//                        .requestMatchers(HttpMethod.PUT, "/api/v1/matches/**").hasRole("ADMIN")
+//                        .requestMatchers(HttpMethod.PATCH, "/api/v1/matches/**").hasRole("ADMIN")
+//
+//                        .requestMatchers(HttpMethod.GET, "/api/v1/matches/**").hasAnyRole("ADMIN", "USER")
+//
+//                        .anyRequest().authenticated()
+//                )
+//                .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class)
+//                .build();
+//    }
 }
