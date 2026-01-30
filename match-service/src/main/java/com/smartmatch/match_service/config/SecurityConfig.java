@@ -1,5 +1,6 @@
 package com.smartmatch.match_service.config;
 
+import com.smartmatch.common.BaseSecurityConfig;
 import com.smartmatch.common.JwtFilter;
 import com.smartmatch.common.JwtUtils;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-public class SecurityConfig {
+public class SecurityConfig extends BaseSecurityConfig {
 
     private final JwtUtils jwtUtils;
 
@@ -27,40 +28,22 @@ public class SecurityConfig {
 
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtUtils jwtUtils) throws Exception {
         return http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(csrf -> csrf.disable())
+                .httpBasic(basic -> basic.disable())
+                .sessionManagement(s -> s.sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // ВРЕМЕННО: Разрешаем PATCH без токена для теста RabbitMQ
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/matches/**").permitAll()
-
-                        .requestMatchers(HttpMethod.GET, "/api/v1/matches/{id}/exists").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/matches/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/matches/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/matches/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/matches/**").hasAnyRole("ADMIN", "USER")
+
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new com.smartmatch.common.JwtFilter(jwtUtils),
+                        org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        return http
-//                .csrf(AbstractHttpConfigurer::disable)
-//                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers(HttpMethod.GET, "/api/v1/matches/{id}/exists").hasAnyRole("ADMIN", "USER")
-//
-//                        .requestMatchers(HttpMethod.POST, "/api/v1/matches/**").hasRole("ADMIN")
-//                        .requestMatchers(HttpMethod.PUT, "/api/v1/matches/**").hasRole("ADMIN")
-//                        .requestMatchers(HttpMethod.PATCH, "/api/v1/matches/**").hasRole("ADMIN")
-//
-//                        .requestMatchers(HttpMethod.GET, "/api/v1/matches/**").hasAnyRole("ADMIN", "USER")
-//
-//                        .anyRequest().authenticated()
-//                )
-//                .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class)
-//                .build();
-//    }
 }

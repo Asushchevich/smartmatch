@@ -2,6 +2,7 @@ package com.smartmatch.match_service.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.smartmatch.common.model.BaseEntity;
+import com.smartmatch.common.model.SportType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,6 +17,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
@@ -25,7 +27,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Match extends BaseEntity {
+public class Match extends BaseEntity implements Serializable {
     @Column(nullable = false, name = "title")
     private String title;
 
@@ -55,6 +57,10 @@ public class Match extends BaseEntity {
     @Column(name = "away_team_score")
     @JsonProperty("away_team_score")
     private Integer awayTeamScore = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sport_type", nullable = false)
+    private SportType sportType = SportType.FOOTBALL;
 }
 
 

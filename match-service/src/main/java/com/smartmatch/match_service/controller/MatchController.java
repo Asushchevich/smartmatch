@@ -51,8 +51,11 @@ public class MatchController {
     public ResponseEntity<Void> updateScore(
             @PathVariable("id") UUID id,
             @RequestParam("sportType") String sportType,
-            @RequestParam("teamSide") String teamSide) {
-        matchService.goalScored(id, sportType, teamSide);
+            @RequestParam("teamSide") String teamSide,
+            @RequestParam(value = "points", defaultValue = "1") int points) {
+
+        matchService.goalScored(id, sportType, teamSide, points);
+
         return ResponseEntity.ok().build();
     }
 
@@ -62,6 +65,12 @@ public class MatchController {
             @RequestParam("sportType") String sportType,
             @RequestParam("teamSide") String teamSide) {
         matchService.goalCancelled(id, sportType, teamSide);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMatch(@PathVariable UUID id) {
+        matchService.deleteMatch(id);
         return ResponseEntity.ok().build();
     }
 }

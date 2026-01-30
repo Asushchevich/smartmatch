@@ -2,122 +2,117 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>SmartMatch Pro</title>
+    <title>SmartMatch Pro | Admin Panel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
     <style>
         :root {
-            --primary: #007bff; --success: #28a745; --danger: #dc3545;
-            --warning: #ffc107; --gray: #6c757d; --dark: #343a40;
+            --bg: #f0f2f5; --card: #ffffff; --primary: #1a73e8;
+            --success: #34a853; --danger: #ea4335; --warning: #fbbc05;
+            --text: #202124; --text-light: #5f6368;
         }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 40px 20px; }
-        .container { width: 100%; max-width: 900px; }
-        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 25px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 1000px; }
+        .card { background: var(--card); border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); margin-bottom: 20px; }
         .hidden { display: none !important; }
 
-        button { padding: 12px 20px; border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        button:active { transform: scale(0.95); }
-        .btn-login { background: var(--primary); width: 100%; }
-        .btn-reg { background: var(--success); width: 100%; }
-        .btn-delete { background: transparent; color: var(--danger); padding: 5px 10px; font-size: 12px; border:none; cursor:pointer;}
-        .btn-delete:hover { text-decoration: underline; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #dadce0; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+        button { padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
 
-        .status-label { padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 800; text-transform: uppercase; display: inline-block; }
-        .status-SCHEDULED { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
-        .status-LIVE { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; animation: pulse-green 2s infinite; }
-        .status-FINISHED { background: #e9ecef; color: #495057; border: 1px solid #dee2e6; }
-        .status-CANCELLED { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; text-decoration: line-through; }
+        /* Вкладки */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #dadce0; background: white; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        @keyframes pulse-green {
-            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
-        }
+        .match-item { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; padding: 15px; border-bottom: 1px solid #eee; }
+        .team-name { font-size: 18px; font-weight: bold; }
+        .score-box { background: #3c4043; color: white; padding: 10px 20px; border-radius: 8px; font-size: 24px; font-weight: 800; min-width: 80px; text-align: center; }
 
-        .score-big { font-size: 48px; font-weight: bold; margin: 20px 0; display: flex; align-items: center; gap: 30px; justify-content: center; }
-        .control-group { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .btn-plus { background: var(--success); width: 70px; height: 70px; border-radius: 50%; font-size: 30px; }
-        .btn-minus { background: var(--danger); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; }
-        .btn-back { background: transparent; color: var(--primary); border: 2px solid var(--primary); margin-bottom: 20px; }
+        .badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .LIVE { background: #e6f4ea; color: var(--success); border: 1px solid var(--success); }
+        .SCHEDULED { background: #fef7e0; color: #b06000; border: 1px solid var(--warning); }
+        .FINISHED { background: #f1f3f4; color: var(--text-light); }
+        .CANCELLED { background: #fce8e6; color: var(--danger); }
 
-        .match-card { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 15px 0; }
+        .manage-grid { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 30px; text-align: center; align-items: center; }
+        .score-btn-group { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        .btn-circle { width: 50px; height: 50px; border-radius: 50%; font-size: 18px; display: flex; align-items: center; justify-content: center; }
 
-        .create-form { display: grid; grid-template-columns: 1fr 1fr 180px 140px auto; gap: 10px; align-items: end; }
-        .create-form label { display: block; font-size: 11px; color: var(--gray); margin-bottom: 5px; font-weight: bold; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        .create-form input, .create-form select { margin-bottom: 0; }
+        .toast { position: fixed; top: 20px; right: 20px; background: #323232; color: white; padding: 16px; border-radius: 8px; z-index: 1000; animation: slideIn 0.3s; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="auth-page" class="card">
-        <h2 id="auth-title">Вход в SmartMatch</h2>
-        <form id="auth-form">
-            <input id="username" type="text" placeholder="Логин" required>
-            <input id="password" type="password" placeholder="Пароль" required>
-            <button type="submit" id="main-auth-btn" class="btn-login">Войти</button>
-        </form>
-        <p style="text-align:center; margin-top:15px;">
-            <a href="#" id="toggle-auth" style="color: var(--primary); text-decoration:none;">Нет аккаунта? Зарегистрироваться</a>
-        </p>
+        <h2 id="auth-title">SmartMatch Login</h2>
+        <input id="username" type="text" placeholder="Username">
+        <input id="password" type="password" placeholder="Password">
+        <button id="auth-btn" class="btn-primary" style="width:100%" onclick="handleAuth()">Login</button>
+        <p style="text-align:center"><a href="#" onclick="toggleAuthMode()" id="auth-toggle-text">Create Admin Account</a></p>
     </div>
 
     <div id="list-page" class="hidden">
-        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2>Список матчей</h2>
-            <button onclick="logout()" style="background:var(--danger)">Выйти</button>
+        <div style="display:flex; justify-content:space-between; align-items:center">
+            <h1>🏆 Dashboard <span id="ws-status" style="font-size: 12px; color: var(--danger)">● Offline</span></h1>
+            <button class="btn-outline" onclick="logout()">Logout</button>
         </div>
 
-        <div class="card" style="border-top: 4px solid var(--success); padding: 20px;">
-            <h4 style="margin-top:0; margin-bottom:15px">🆕 Запланировать новый матч</h4>
-            <div class="create-form">
-                <div>
-                    <label>ХОЗЯЕВА</label>
-                    <input type="text" id="new-teamA" placeholder="Название">
-                </div>
-                <div>
-                    <label>ГОСТИ</label>
-                    <input type="text" id="new-teamB" placeholder="Название">
-                </div>
-                <div>
-                    <label>ДАТА И ВРЕМЯ</label>
-                    <input type="datetime-local" id="new-startDate">
-                </div>
-                <div>
-                    <label>СПОРТ</label>
-                    <select id="new-sportType">
-                        <option value="FOOTBALL">Футбол</option>
-                        <option value="BASKETBALL">Баскетбол</option>
+        <div class="card" style="border-left: 6px solid var(--primary);">
+            <h3 style="margin-top:0">Schedule New Match</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap:10px; align-items: end;">
+                <div><label>Home</label><input id="new-home" placeholder="Team A"></div>
+                <div><label>Away</label><input id="new-away" placeholder="Team B"></div>
+                <div><label>Date</label><input type="datetime-local" id="new-date"></div>
+                <div><label>Sport</label>
+                    <select id="new-sport">
+                        <option value="FOOTBALL">⚽ Football</option>
+                        <option value="BASKETBALL">🏀 Basketball</option>
                     </select>
                 </div>
-                <button class="btn-reg" onclick="handleCreateMatch()">Создать</button>
+                <button class="btn-success" onclick="createMatch()">Create</button>
             </div>
         </div>
 
-        <div id="match-list-container"></div>
+        <div class="tabs">
+            <button id="tab-FOOTBALL" class="tab-btn active" onclick="switchTab('FOOTBALL')">⚽ Football</button>
+            <button id="tab-BASKETBALL" class="tab-btn" onclick="switchTab('BASKETBALL')">🏀 Basketball</button>
+        </div>
+
+        <div id="match-container"></div>
     </div>
 
     <div id="manage-page" class="card hidden">
-        <button class="btn-back" onclick="showListPage()">← Назад к списку</button>
-        <div id="manage-details" style="text-align: center;">
-            <h1 id="teams-title">Team A vs Team B</h1>
-            <div id="current-status" class="status-label">STATUS</div>
+        <button class="btn-outline" onclick="showListPage()">← Back to List</button>
+        <div id="manage-content" style="margin-top:20px">
+            <div class="manage-grid">
+                <div class="score-btn-group" id="home-score-ctrl"></div>
 
-            <div id="score-controls" class="score-big">
-                <div class="control-group">
-                    <button class="btn-plus" onclick="handleGoal('HOME')">+</button>
-                    <button class="btn-minus" onclick="handleGoalCancel('HOME')">−</button>
+                <div>
+                    <div id="m-status" class="badge">STATUS</div>
+                    <div id="m-sport-icon" style="font-size: 24px; margin: 10px 0;">⚽</div>
+                    <h1 id="m-teams" style="font-size:32px">Team A vs Team B</h1>
+                    <div id="m-score" style="font-size:64px; font-weight:800">0 : 0</div>
                 </div>
-                <span id="live-score">0 : 0</span>
-                <div class="control-group">
-                    <button class="btn-plus" onclick="handleGoal('AWAY')">+</button>
-                    <button class="btn-minus" onclick="handleGoalCancel('AWAY')">−</button>
-                </div>
+
+                <div class="score-btn-group" id="away-score-ctrl"></div>
             </div>
 
-            <div id="status-actions" style="display:flex; gap:10px; justify-content: center; margin-top: 20px;">
-                <button id="btn-start" class="btn-login" style="width:auto" onclick="handleStatus('LIVE')">▶ Начать матч</button>
-                <button id="btn-finish" style="background:var(--dark); width:auto" onclick="handleStatus('FINISHED')">⏹ Завершить</button>
-                <button id="btn-cancel" style="background:var(--gray); width:auto" onclick="handleStatus('CANCELLED')">✖ Отменить</button>
+            <div style="margin-top:40px; padding-top:20px; border-top:1px solid #eee">
+                <h3>Update Match Status</h3>
+                <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                    <button class="btn-primary" style="background:var(--warning); color:black" onclick="changeStatus('SCHEDULED')">Set Scheduled</button>
+                    <button class="btn-success" onclick="changeStatus('LIVE')">Set Live (Start)</button>
+                    <button class="btn-primary" style="background:#3c4043" onclick="changeStatus('FINISHED')">Set Finished</button>
+                    <button class="btn-danger" onclick="changeStatus('CANCELLED')">Set Cancelled</button>
+                    <button class="btn-outline" style="border-color:var(--danger); color:var(--danger)" onclick="deleteMatch()">Delete Match</button>
+                </div>
             </div>
         </div>
     </div>
@@ -125,200 +120,247 @@
 
 <script>
     const API = '/api/v1';
-    let isLoginMode = true;
-    let selectedMatchId = null;
+    let isLogin = true;
+    let selectedId = null;
+    let stompClient = null;
+    let currentTab = 'FOOTBALL';
+    let allMatches = [];
 
-    document.getElementById('toggle-auth').onclick = (e) => {
-        isLoginMode = !isLoginMode;
-        document.getElementById('auth-title').innerText = isLoginMode ? 'Вход в SmartMatch' : 'Регистрация ADMIN';
-        document.getElementById('main-auth-btn').innerText = isLoginMode ? 'Войти' : 'Создать аккаунт';
-        document.getElementById('main-auth-btn').className = isLoginMode ? 'btn-login' : 'btn-reg';
-        e.target.innerText = isLoginMode ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти';
-    };
+    // --- WebSocket ---
+    function connectWebSocket() {
+        if (stompClient && stompClient.connected) return;
+        const socket = new SockJS('http://localhost:8080/ws-notifications');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null;
 
-    document.getElementById('auth-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const path = isLoginMode ? '/auth/login' : '/auth/register';
-        const payload = {
-            username: document.getElementById('username').value,
-            password: document.getElementById('password').value
-        };
-        if(!isLoginMode) { payload.role = 'ROLE_ADMIN'; payload.enabled = true; }
+        stompClient.connect({}, function (frame) {
+            document.getElementById('ws-status').innerText = '● Live';
+            document.getElementById('ws-status').style.color = 'var(--success)';
 
-        try {
-            const res = await fetch(API + path, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
+            stompClient.subscribe('/topic/match-updates', function (msg) {
+                const event = JSON.parse(msg.body);
+                showToast(event.message || "Match Updated!");
+                fetchMatches();
+                if (selectedId === event.matchId) fetchSingleMatch();
             });
+        }, function () {
+            document.getElementById('ws-status').innerText = '● Reconnecting...';
+            setTimeout(connectWebSocket, 5000);
+        });
+    }
 
-            if (res.ok) {
-                if (isLoginMode) {
-                    localStorage.setItem('token', await res.text());
-                    showListPage();
-                } else {
-                    alert('Регистрация успешна! Теперь войдите.');
-                    location.reload();
-                }
-            } else { alert('Ошибка! Проверьте данные.'); }
-        } catch (err) { alert('Сервер недоступен'); }
-    };
+    function showToast(text) {
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.innerHTML = `<strong>SmartMatch:</strong><br>${text}`;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 4000);
+    }
 
-    async function showListPage() {
+    // --- Auth ---
+    async function handleAuth() {
+        const userVal = document.getElementById('username').value;
+        const passVal = document.getElementById('password').value;
+        const payload = { username: userVal, password: passVal };
+        if(!isLogin) payload.role = 'ROLE_ADMIN';
+
+        const res = await fetch(`${API}/auth/${isLogin?'login':'register'}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            if (isLogin) {
+                const token = await res.text();
+                localStorage.setItem('token', token);
+                showListPage();
+            } else {
+                alert('Success! Now login.');
+                toggleAuthMode();
+            }
+        } else alert('Auth Failed.');
+    }
+
+    function toggleAuthMode() {
+        isLogin = !isLogin;
+        document.getElementById('auth-title').innerText = isLogin ? 'SmartMatch Login' : 'Register Admin';
+        document.getElementById('auth-btn').innerText = isLogin ? 'Login' : 'Sign Up';
+    }
+
+    // --- Navigation & Tabs ---
+    function showListPage() {
+        selectedId = null;
         document.getElementById('auth-page').classList.add('hidden');
         document.getElementById('manage-page').classList.add('hidden');
         document.getElementById('list-page').classList.remove('hidden');
-
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API}/matches`, { headers: {'Authorization': `Bearer ${token}`} });
-        const matches = await res.json();
-
-        document.getElementById('match-list-container').innerHTML = matches.map(m => {
-            const dateStr = m.start_date || m.startDate;
-            const date = dateStr ? new Date(dateStr).toLocaleString('ru', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}) : 'Дата не указана';
-
-            return `
-            <div class="card match-card" style="border-left: 8px solid ${getStatusColor(m.status)}">
-                <div>
-                    <small style="color:var(--gray)">${date}</small><br>
-                    <strong>${m.teamA} vs ${m.teamB}</strong><br>
-                    <span class="status-label status-${m.status}">${m.status}</span>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size:24px; font-weight:bold">${m.home_team_score ?? 0} : ${m.away_team_score ?? 0}</div>
-                    <button class="btn-login" style="width:auto; padding: 5px 15px;" onclick="openManage('${m.id}')">Управлять</button>
-                    <br><button class="btn-delete" onclick="handleDeleteMatch('${m.id}')">удалить</button>
-                </div>
-            </div>
-        `}).join('');
+        fetchMatches();
+        connectWebSocket();
     }
 
-    async function handleCreateMatch() {
-        const teamA = document.getElementById('new-teamA').value;
-        const teamB = document.getElementById('new-teamB').value;
-        const startDate = document.getElementById('new-startDate').value;
-        const sportType = document.getElementById('new-sportType').value;
+    function switchTab(sport) {
+        currentTab = sport;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tab-${sport}`).classList.add('active');
+        renderList();
+    }
 
-        if (!teamA || !teamB || !startDate) return alert('Заполните все поля!');
+    // --- API Calls ---
+    async function fetchMatches() {
+        const res = await fetch(`${API}/matches`, {
+            headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
+        });
+        if (res.ok) {
+            allMatches = await res.json();
+            renderList();
+        }
+    }
 
-        if (new Date(startDate) <= new Date()) {
-            return alert('Матч должен быть запланирован на будущее время!');
+    function renderList() {
+        const container = document.getElementById('match-container');
+        const filtered = allMatches.filter(m => (m.sportType || 'FOOTBALL') === currentTab);
+
+        if(filtered.length === 0) {
+            container.innerHTML = `<p style="text-align:center; color:gray; margin-top:20px;">No matches found for ${currentTab}</p>`;
+            return;
         }
 
-        const token = localStorage.getItem('token');
+        container.innerHTML = filtered.map(m => `
+            <div class="card match-item">
+                <div class="team-name" style="text-align:right">${m.teamA || m.homeTeam}</div>
+                <div style="text-align:center">
+                    <div class="score-box">${m.home_team_score ?? 0} : ${m.away_team_score ?? 0}</div>
+                    <div class="badge ${m.status}" style="margin-top:10px">${m.status}</div>
+                </div>
+                <div class="team-name">${m.teamB || m.awayTeam}</div>
+                <div style="grid-column: span 3; text-align:center; margin-top:10px">
+                    <button class="btn-outline" onclick="openManage('${m.id}')">Manage</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function createMatch() {
+        const home = document.getElementById('new-home').value;
+        const away = document.getElementById('new-away').value;
+        const dateInput = document.getElementById('new-date').value;
+        const sport = document.getElementById('new-sport').value;
+
+        if (!home || !away || !dateInput) {
+            alert("Заполните все поля: команды и дату!");
+            return;
+        }
+
+        const formattedDate = dateInput.includes(':') && dateInput.split(':').length === 2
+            ? dateInput + ':00'
+            : dateInput;
 
         const body = {
-            teamA: teamA,
-            teamB: teamB,
-            start_date: startDate,
-            sportType: sportType,
-            title: `${teamA} vs ${teamB}`,
+            teamA: home,
+            teamB: away,
+            start_date: formattedDate,
+            sportType: sport,
             status: 'SCHEDULED',
             home_team_score: 0,
             away_team_score: 0
         };
 
+        console.log("Отправляем JSON:", body);
+
         const res = await fetch(`${API}/matches`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
             body: JSON.stringify(body)
         });
 
         if (res.ok) {
-            document.getElementById('new-teamA').value = '';
-            document.getElementById('new-teamB').value = '';
-            document.getElementById('new-startDate').value = '';
-            showListPage();
+            document.getElementById('new-home').value = '';
+            document.getElementById('new-away').value = '';
+            document.getElementById('new-date').value = '';
+
+            await fetchMatches();
+            alert("Матч успешно создан!");
         } else {
-            const err = await res.json();
-            alert('Ошибка сервера: ' + (err.message || 'Проверьте данные'));
-        }
-    }
-
-    async function handleDeleteMatch(id) {
-        if (!confirm('Удалить этот матч?')) return;
-        const token = localStorage.getItem('token');
-        await fetch(`${API}/matches/${id}`, {
-            method: 'DELETE',
-            headers: {'Authorization': `Bearer ${token}`}
-        });
-        showListPage();
-    }
-
-    function getStatusColor(status) {
-        switch(status) {
-            case 'LIVE': return '#28a745';
-            case 'SCHEDULED': return '#ffc107';
-            case 'CANCELLED': return '#dc3545';
-            default: return '#6c757d';
+            const errorText = await res.text();
+            console.error("Ошибка сервера:", errorText);
+            alert("Ошибка при создании: " + errorText);
         }
     }
 
     async function openManage(id) {
-        selectedMatchId = id;
+        selectedId = id;
         document.getElementById('list-page').classList.add('hidden');
         document.getElementById('manage-page').classList.remove('hidden');
-        refreshManageData();
+        fetchSingleMatch();
     }
 
-    async function refreshManageData() {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API}/matches/${selectedMatchId}`, { headers: {'Authorization': `Bearer ${token}`} });
-        const m = await res.json();
+    async function fetchSingleMatch() {
+        if(!selectedId) return;
+        const res = await fetch(`${API}/matches/${selectedId}`, {
+            headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
+        });
+        if (res.ok) {
+            const m = await res.json();
+            const sport = m.sportType || 'FOOTBALL';
+            document.getElementById('m-teams').innerText = `${m.teamA} vs ${m.teamB}`;
+            document.getElementById('m-score').innerText = `${m.home_team_score} : ${m.away_team_score}`;
+            document.getElementById('m-sport-icon').innerText = sport === 'BASKETBALL' ? '🏀' : '⚽';
 
-        document.getElementById('teams-title').innerText = `${m.teamA} vs ${m.teamB}`;
-        const badge = document.getElementById('current-status');
-        badge.innerText = m.status;
-        badge.className = `status-label status-${m.status}`;
+            const badge = document.getElementById('m-status');
+            badge.innerText = m.status;
+            badge.className = `badge ${m.status}`;
 
-        document.getElementById('live-score').innerText = `${m.home_team_score ?? 0} : ${m.away_team_score ?? 0}`;
-
-        const scoreControls = document.getElementById('score-controls');
-        const btnStart = document.getElementById('btn-start');
-        const btnFinish = document.getElementById('btn-finish');
-        const btnCancel = document.getElementById('btn-cancel');
-
-        if (m.status === 'LIVE') {
-            scoreControls.classList.remove('hidden');
-            btnStart.classList.add('hidden');
-            btnFinish.classList.remove('hidden');
-            btnCancel.classList.remove('hidden');
-        } else if (m.status === 'SCHEDULED') {
-            scoreControls.classList.add('hidden');
-            btnStart.classList.remove('hidden');
-            btnFinish.classList.add('hidden');
-            btnCancel.classList.remove('hidden');
-        } else {
-            scoreControls.classList.add('hidden');
-            document.getElementById('status-actions').classList.add('hidden');
+            // Рисуем кнопки управления счетом
+            renderScoreButtons(sport);
         }
     }
 
-    async function handleGoal(side) {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API}/matches/${selectedMatchId}/goal?sportType=FOOTBALL&teamSide=${side}`, {
-            method: 'PATCH', headers: {'Authorization': `Bearer ${token}`}
-        });
-        if(res.ok) refreshManageData();
+    function renderScoreButtons(sport) {
+        const createBtns = (side) => {
+            if (sport === 'BASKETBALL') {
+                return `
+                    <button class="btn-success btn-circle" onclick="updateScore('${side}', 'goal', 1)">+1</button>
+                    <button class="btn-success btn-circle" onclick="updateScore('${side}', 'goal', 2)">+2</button>
+                    <button class="btn-success btn-circle" onclick="updateScore('${side}', 'goal', 3)">+3</button>
+                    <button class="btn-primary" onclick="updateScore('${side}', 'goal-cancel')">− Undo</button>
+                `;
+            }
+            return `
+                <button class="btn-success btn-circle" onclick="updateScore('${side}', 'goal', 1)">+</button>
+                <button class="btn-primary" onclick="updateScore('${side}', 'goal-cancel')">− Undo</button>
+            `;
+        };
+        document.getElementById('home-score-ctrl').innerHTML = createBtns('HOME');
+        document.getElementById('away-score-ctrl').innerHTML = createBtns('AWAY');
     }
 
-    async function handleGoalCancel(side) {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API}/matches/${selectedMatchId}/goal-cancel?sportType=FOOTBALL&teamSide=${side}`, {
-            method: 'PATCH', headers: {'Authorization': `Bearer ${token}`}
+    async function updateScore(side, endpoint, pts = 1) {
+        // Определяем текущий спорт для API
+        const sport = allMatches.find(m => m.id === selectedId)?.sportType || 'FOOTBALL';
+        await fetch(`${API}/matches/${selectedId}/${endpoint}?teamSide=${side}&sportType=${sport}&points=${pts}`, {
+            method: 'PATCH',
+            headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
         });
-        if(res.ok) refreshManageData();
     }
 
-    async function handleStatus(status) {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API}/matches/${selectedMatchId}/status?status=${status}`, {
-            method: 'PATCH', headers: {'Authorization': `Bearer ${token}`}
+    async function changeStatus(status) {
+        await fetch(`${API}/matches/${selectedId}/status?status=${status}`, {
+            method: 'PATCH',
+            headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
         });
-        if(res.ok) refreshManageData();
+    }
+
+    async function deleteMatch() {
+        if(confirm('Delete?')) {
+            await fetch(`${API}/matches/${selectedId}`, {
+                method: 'DELETE',
+                headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
+            });
+            showListPage();
+        }
     }
 
     function logout() { localStorage.clear(); location.reload(); }

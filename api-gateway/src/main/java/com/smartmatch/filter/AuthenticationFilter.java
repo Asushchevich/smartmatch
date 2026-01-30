@@ -27,7 +27,9 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         return (exchange, chain) -> {
             String path = exchange.getRequest().getURI().getPath();
 
-            if (path.contains("/api/v1/auth/login") || path.contains("/api/v1/auth/register")) {
+            if (path.contains("/api/v1/auth/login") ||
+                    path.contains("/api/v1/auth/register") ||
+                    path.contains("/ws-notifications")) { // Теперь сокеты проходят "бесплатно"
                 return chain.filter(exchange);
             }
 
@@ -42,13 +44,8 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
             }
 
             String token = authHeader.substring(7);
-
             try {
                 jwtUtils.validateToken(token);
-
-                // String username = jwtUtils.extractUsername(token);
-                // exchange.getRequest().mutate().header("X-User-Name", username).build();
-
             } catch (Exception e) {
                 return onError(exchange, "Invalid or expired token", HttpStatus.UNAUTHORIZED);
             }

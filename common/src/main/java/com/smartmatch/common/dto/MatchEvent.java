@@ -1,5 +1,6 @@
 package com.smartmatch.common.dto;
 
+import com.smartmatch.common.model.SportType;
 import lombok.*;
 import java.util.UUID;
 
@@ -12,6 +13,8 @@ public class MatchEvent {
     private String title;
     private String status;
     private String message;
+    private String action;
+    private SportType sportType;
     private Integer homeTeamScore;
     private Integer awayTeamScore;
 }

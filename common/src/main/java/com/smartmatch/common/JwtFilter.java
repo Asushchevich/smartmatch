@@ -24,7 +24,15 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+
+        if (path.contains("/ws-notifications") || path.contains("/api/v1/auth")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
+
         log.info("Incoming request to: {}", request.getRequestURI());
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {

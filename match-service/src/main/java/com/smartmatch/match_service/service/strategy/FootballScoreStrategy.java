@@ -7,14 +7,14 @@ import org.springframework.stereotype.Component;
 public class FootballScoreStrategy implements ScoreStrategy {
 
     @Override
-    public void updateScore(Match match, String teamSide) {
+    public void updateScore(Match match, String teamSide, int points) {
         if (match.getHomeTeamScore() == null) match.setHomeTeamScore(0);
         if (match.getAwayTeamScore() == null) match.setAwayTeamScore(0);
 
         if ("HOME".equalsIgnoreCase(teamSide)) {
-            match.setHomeTeamScore(match.getHomeTeamScore() + 1);
+            match.setHomeTeamScore(match.getHomeTeamScore() + points);
         } else if ("AWAY".equalsIgnoreCase(teamSide)) {
-            match.setAwayTeamScore(match.getAwayTeamScore() + 1);
+            match.setAwayTeamScore(match.getAwayTeamScore() + points);
         }
     }
 

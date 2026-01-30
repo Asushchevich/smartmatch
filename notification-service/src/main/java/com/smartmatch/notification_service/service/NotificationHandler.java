@@ -5,6 +5,8 @@ import com.smartmatch.notification_service.model.Notification;
 import com.smartmatch.notification_service.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,19 +17,16 @@ public class NotificationHandler {
 
     private final NotificationRepository notificationRepository;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
     @RabbitListener(queues = "notification.queue")
     public void handleNotification(MatchEvent event) {
-        System.out.println("--------------------------------------------------");
-        System.out.println("🔔 УВЕДОМЛЕНИЕ:");
-        System.out.println("📍 Матч: " + event.getTitle());
+        System.out.println("📩 Получено событие от RabbitMQ: " + event.getAction());
 
-        if (event.getHomeTeamScore() != null && event.getAwayTeamScore() != null) {
-            System.out.println("⚽ ТЕКУЩИЙ СЧЕТ: [" + event.getHomeTeamScore() + " : " + event.getAwayTeamScore() + "]");
+        if ("DELETE".equals(event.getAction())) {
+            System.out.println("🗑️ Обработка удаления матча ID: " + event.getMatchId());
         }
-
-        System.out.println("📊 Статус: " + event.getStatus());
-        System.out.println("💬 Сообщение: " + event.getMessage());
-        System.out.println("--------------------------------------------------");
 
         Notification notification = Notification.builder()
                 .matchId(event.getMatchId())
@@ -38,6 +37,9 @@ public class NotificationHandler {
                 .build();
 
         notificationRepository.save(notification);
-        System.out.println("✅ История уведомления сохранена в БД");
+
+        messagingTemplate.convertAndSend("/topic/match-updates", event);
+
+        System.out.println("🚀 Событие [" + event.getAction() + "] отправлено в WebSocket");
     }
 }
